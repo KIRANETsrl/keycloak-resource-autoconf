@@ -135,7 +135,7 @@ class KeycloakResourceAutoConfigurationTest {
         List<PolicyEnforcerConfig.PathConfig> paths = properties.getPolicyEnforcerConfig().getPaths();
         Assertions.assertNotNull(paths);
         Assertions.assertFalse(paths.isEmpty());
-        Assertions.assertEquals(5, paths.size());
+        Assertions.assertEquals(1, paths.size());
         paths.forEach(path -> Assertions.assertEquals("/myAwesomeMapping", path.getPath()));
     }
 
@@ -154,9 +154,9 @@ class KeycloakResourceAutoConfigurationTest {
         Assertions.assertNotNull(paths);
         Assertions.assertFalse(paths.isEmpty());
         Assertions.assertEquals(3, paths.size());
-        Assertions.assertEquals("/foo", paths.get(1).getPath());
-        Assertions.assertEquals("/bar", paths.get(2).getPath());
-        Assertions.assertEquals("/myAwesomeMapping", paths.get(0).getPath());
+        Assertions.assertEquals("/foo", paths.get(0).getPath());
+        Assertions.assertEquals("/bar", paths.get(1).getPath());
+        Assertions.assertEquals("/myAwesomeMapping", paths.get(2).getPath());
     }
 
     @Test
@@ -192,7 +192,7 @@ class KeycloakResourceAutoConfigurationTest {
         List<PolicyEnforcerConfig.PathConfig> paths = properties.getPolicyEnforcerConfig().getPaths();
         Assertions.assertNotNull(paths);
         Assertions.assertFalse(paths.isEmpty());
-        Assertions.assertEquals(5, paths.size());
+        Assertions.assertEquals(1, paths.size());
         paths.forEach(path -> Assertions.assertEquals("/", path.getPath()));
     }
 
