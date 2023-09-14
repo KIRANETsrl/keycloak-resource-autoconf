@@ -91,7 +91,7 @@ class KeycloakResourceAutoConfigurationTest {
             Assertions.assertEquals("/authorized", path.getPath());
             Assertions.assertEquals(1, path.getMethods().get(0).getScopes().size());
             Assertions.assertEquals("entity:read", path.getMethods().get(0).getScopes().get(0));
-            Assertions.assertEquals("Entity Reader", path.getName());
+            Assertions.assertEquals("authorized", path.getName());
         });
     }
 
@@ -117,7 +117,7 @@ class KeycloakResourceAutoConfigurationTest {
             Assertions.assertEquals("/authorized", path.getPath());
             Assertions.assertEquals(1, path.getMethods().get(0).getScopes().size());
             Assertions.assertEquals("entity:read", path.getMethods().get(0).getScopes().get(0));
-            Assertions.assertEquals("Entity Getter", path.getName());
+            Assertions.assertEquals("authorized", path.getName());
         });
     }
 
@@ -158,42 +158,4 @@ class KeycloakResourceAutoConfigurationTest {
         Assertions.assertEquals("/bar", paths.get(1).getPath());
         Assertions.assertEquals("/myAwesomeMapping", paths.get(2).getPath());
     }
-
-    @Test
-    void givenAMethodWthMultiplePaths_withoutRequestMapping_resourcesAreCreated() {
-        Map<String, Object> beansWithAnnotation = new HashMap<>();
-        beansWithAnnotation.put("ControllerWithMultiplePathOnMethod", new ControllerWithMultiplePathOnMethod());
-
-        Mockito.when(context.getBeansWithAnnotation(Mockito.any())).thenReturn(beansWithAnnotation);
-        autoconfigurationService.updateKeycloakConfiguration();
-
-        KeycloakSpringBootProperties properties = sut.kcProperties();
-        Assertions.assertNotNull(properties);
-        Assertions.assertNotNull(properties.getPolicyEnforcerConfig());
-        List<PolicyEnforcerConfig.PathConfig> paths = properties.getPolicyEnforcerConfig().getPaths();
-        Assertions.assertNotNull(paths);
-        Assertions.assertFalse(paths.isEmpty());
-        Assertions.assertEquals(2, paths.size());
-        Assertions.assertEquals("/foo", paths.get(0).getPath());
-        Assertions.assertEquals("/bar", paths.get(1).getPath());
-    }
-
-    @Test
-    void givenAnnotatedController_withoutRequestMapping_resourcesAreCreated() {
-        Map<String, Object> beansWithAnnotation = new HashMap<>();
-        beansWithAnnotation.put("ControllerWithoutRequestMapping", new ControllerWithoutRequestMapping());
-
-        Mockito.when(context.getBeansWithAnnotation(Mockito.any())).thenReturn(beansWithAnnotation);
-        autoconfigurationService.updateKeycloakConfiguration();
-
-        KeycloakSpringBootProperties properties = sut.kcProperties();
-        Assertions.assertNotNull(properties);
-        Assertions.assertNotNull(properties.getPolicyEnforcerConfig());
-        List<PolicyEnforcerConfig.PathConfig> paths = properties.getPolicyEnforcerConfig().getPaths();
-        Assertions.assertNotNull(paths);
-        Assertions.assertFalse(paths.isEmpty());
-        Assertions.assertEquals(1, paths.size());
-        paths.forEach(path -> Assertions.assertEquals("/", path.getPath()));
-    }
-
 }

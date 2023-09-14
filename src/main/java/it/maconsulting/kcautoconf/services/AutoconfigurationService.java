@@ -65,8 +65,12 @@ public class AutoconfigurationService {
             final RequestMapping requestMappingAnnotation = AnnotationUtils.getAnnotation(targetClass, RequestMapping.class);
             List<String> paths = getClassLevelAnnotatedPaths(requestMappingAnnotation);
 
-            // Made it an array to be able to use it inside lambda expressions
-            final String[] resourceName = { null };
+            if (requestMappingAnnotation.value().length == 0) {
+
+                throw new RuntimeException("Missing resource/endpoint name in @RequestMapping annotation on controller: " + name);
+            }
+
+            String resourceName = requestMappingAnnotation.value()[0];
 
             log.debug("Parsing controller {}", name);
             Arrays.asList(targetClass.getDeclaredMethods()).forEach(method -> {
@@ -87,15 +91,9 @@ public class AutoconfigurationService {
                                 PolicyEnforcerConfig.MethodConfig methodConfig = new PolicyEnforcerConfig.MethodConfig();
                                 methodConfig.setMethod(verb.name());
                                 Optional<SwaggerOperationService> operationServiceOption = swaggerOperationServices.stream().findFirst();
-                                
+
                                 if(operationServiceOption.isPresent()) {
                                     SwaggerOperationService swaggerOperationService = operationServiceOption.get();
-
-                                    // Salva il primo nome risorsa che trova nel controller
-                                    if (resourceName[0] == null && swaggerOperationService.getName(method) != null) {
-
-                                        resourceName[0] = swaggerOperationService.getName(method);
-                                    }
 
                                     List<String> scopes = swaggerOperationService.getScopes(method);
                                     if (!scopes.isEmpty()) {
@@ -104,16 +102,7 @@ public class AutoconfigurationService {
                                         methodConfig.setScopes(scopes);
                                     }
                                     pathConfig.getMethods().add(methodConfig);
-                                    pathConfig.setName(swaggerOperationService.getName(method));
-
-                                    if (resourceName[0] != null && !pathConfig.getName().equals(resourceName[0])) {
-
-                                        throw new RuntimeException("Error binding endpoints with scopes: " +
-                                                "\nFound method in controller with a different resource name than the previous ones. " +
-                                                "\nPrevious: " + resourceName[0] +
-                                                "\nCurrent: " + pathConfig.getName() +
-                                                "\nMake sure to set the 'nickname' property in the @ApiOperation annotation to match the kc resource name.");
-                                    }
+                                    pathConfig.setName(resourceName);
                                 }
 
                                 PolicyEnforcerConfig.PathConfig existingPath = pathConfigMap.get(pathConfig.getPath());
