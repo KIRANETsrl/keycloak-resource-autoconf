@@ -5,7 +5,7 @@
 
     <groupId>it.kira.keycloak</groupId>
     <artifactId>keycloak-resource-autoconf</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.7-SNAPSHOT</version>
 
     <name>Keycloak Resource Autoconfigurator</name>
     <description>Automatic configuration annotation to enable autodiscovery of Keycloak policy enforcement
@@ -183,18 +183,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/
-            </url>
-        </repository>
-    </distributionManagement>
 
     <build>
         <plugins>

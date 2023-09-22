@@ -31,6 +31,9 @@ public class AutoconfigurationService {
     @Value("${kcautoconf.export-path:/mac/configuration/export}")
     private String exportPath;
 
+    @Value("${kcautoconf.override:NO_OVERRIDE}")
+    private String override;
+
     @Autowired
     public AutoconfigurationService(ApplicationContext context, KeycloakSpringBootProperties keycloakSpringBootProperties, List<SwaggerOperationService> swaggerOperationServices) {
         this.context = context;
@@ -72,53 +75,61 @@ public class AutoconfigurationService {
 
             String resourceName = requestMappingAnnotation.value()[0];
 
-            log.debug("Parsing controller {}", name);
-            Arrays.asList(targetClass.getDeclaredMethods()).forEach(method -> {
-                final RequestMapping requestMappingOnMethod = AnnotationUtils.getAnnotation(method, RequestMapping.class);
-                if (requestMappingOnMethod != null) {
-                    log.trace("Found method: {}", method);
-                    List<String> methodPaths = extractExtraPathsFromClassMethod(requestMappingOnMethod, method);
-                    List<RequestMethod> httpMethods = Arrays.asList(requestMappingOnMethod.method());
 
-                    paths.forEach(path -> {
-                        httpMethods.forEach(verb -> {
-                            methodPaths.forEach(methodPath -> {
-                                String policyEnforcementPath = buildHttpPath(path, methodPath);
-                                log.debug("Configuring {} request for path: {}", verb, policyEnforcementPath);
 
-                                PolicyEnforcerConfig.PathConfig pathConfig = new PolicyEnforcerConfig.PathConfig();
-                                pathConfig.setPath(policyEnforcementPath);
-                                PolicyEnforcerConfig.MethodConfig methodConfig = new PolicyEnforcerConfig.MethodConfig();
-                                methodConfig.setMethod(verb.name());
-                                Optional<SwaggerOperationService> operationServiceOption = swaggerOperationServices.stream().findFirst();
+                log.debug("Parsing controller {}", name);
+                Arrays.asList(targetClass.getDeclaredMethods()).forEach(method -> {
+                    final RequestMapping requestMappingOnMethod = AnnotationUtils.getAnnotation(method, RequestMapping.class);
+                    if (requestMappingOnMethod != null) {
+                        log.trace("Found method: {}", method);
+                        List<String> methodPaths = extractExtraPathsFromClassMethod(requestMappingOnMethod, method);
+                        List<RequestMethod> httpMethods = Arrays.asList(requestMappingOnMethod.method());
 
-                                if(operationServiceOption.isPresent()) {
-                                    SwaggerOperationService swaggerOperationService = operationServiceOption.get();
+                        paths.forEach(path -> {
+                            httpMethods.forEach(verb -> {
+                                methodPaths.forEach(methodPath -> {
+                                    String policyEnforcementPath = buildHttpPath(path, methodPath);
+                                    log.debug("Configuring {} request for path: {}", verb, policyEnforcementPath);
 
-                                    List<String> scopes = swaggerOperationService.getScopes(method);
-                                    if (!scopes.isEmpty()) {
-                                        scopes.stream().filter(Predicate.not(String::isBlank))
-                                                .forEach(scope -> log.debug("Found authorization scope: {}", scope));
-                                        methodConfig.setScopes(scopes);
+                                    PolicyEnforcerConfig.PathConfig pathConfig = new PolicyEnforcerConfig.PathConfig();
+                                    pathConfig.setPath(policyEnforcementPath);
+                                    PolicyEnforcerConfig.MethodConfig methodConfig = new PolicyEnforcerConfig.MethodConfig();
+                                    methodConfig.setMethod(verb.name());
+                                    Optional<SwaggerOperationService> operationServiceOption = swaggerOperationServices.stream().findFirst();
+
+                                    if (operationServiceOption.isPresent()) {
+                                        SwaggerOperationService swaggerOperationService = operationServiceOption.get();
+
+                                        List<String> scopes = swaggerOperationService.getScopes(method);
+                                        if (!scopes.isEmpty()) {
+                                            scopes.stream().filter(Predicate.not(String::isBlank))
+                                                    .forEach(scope -> log.debug("Found authorization scope: {}", scope));
+                                            methodConfig.setScopes(scopes);
+                                            methodConfig.setScopesEnforcementMode(PolicyEnforcerConfig.ScopeEnforcementMode.ANY);
+                                        }
+                                        pathConfig.getMethods().add(methodConfig);
+                                        pathConfig.setName(resourceName);
                                     }
-                                    pathConfig.getMethods().add(methodConfig);
-                                    pathConfig.setName(resourceName);
-                                }
 
-                                PolicyEnforcerConfig.PathConfig existingPath = pathConfigMap.get(pathConfig.getPath());
+                                    PolicyEnforcerConfig.PathConfig existingPath = pathConfigMap.get(pathConfig.getPath());
 
-                                if (existingPath != null && !pathConfig.getMethods().isEmpty()) {
+                                    if (resourceName.equals(override))
+                                        pathConfig.setEnforcementMode(PolicyEnforcerConfig.EnforcementMode.DISABLED);
 
-                                    existingPath.getMethods().add(pathConfig.getMethods().get(0));
-                                } else {
+                                    if (existingPath != null && !pathConfig.getMethods().isEmpty()) {
 
-                                    pathConfigMap.put(pathConfig.getPath(), pathConfig);
-                                }
+                                        existingPath.getMethods().add(pathConfig.getMethods().get(0));
+                                    } else {
+
+                                        pathConfigMap.put(pathConfig.getPath(), pathConfig);
+                                    }
+                                });
                             });
                         });
-                    });
-                }
-            });
+                    }
+                });
+
+
         });
 
         return new ArrayList<>(pathConfigMap.values());
