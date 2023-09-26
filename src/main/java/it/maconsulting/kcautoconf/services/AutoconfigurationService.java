@@ -186,7 +186,7 @@ public class AutoconfigurationService {
         if (applicationEventPublisher == null)
             return;
 
-        AutoConfigurationFinishedEvent customSpringEvent = new AutoConfigurationFinishedEvent(this, "Config finished! Added" + endpoints + " endpoints.");
+        AutoConfigurationFinishedEvent customSpringEvent = new AutoConfigurationFinishedEvent(this, "Config finished! Added " + endpoints + " endpoints.");
         applicationEventPublisher.publishEvent(customSpringEvent);
     }
 }
