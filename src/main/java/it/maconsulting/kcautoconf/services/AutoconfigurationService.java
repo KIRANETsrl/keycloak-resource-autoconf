@@ -1,12 +1,14 @@
 package it.maconsulting.kcautoconf.services;
 
+import it.maconsulting.kcautoconf.events.AutoConfigurationFinishedEvent;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.adapters.springboot.KeycloakSpringBootProperties;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
@@ -16,17 +18,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AutoconfigurationService {
 
     private final ApplicationContext context;
     private final KeycloakSpringBootProperties keycloakSpringBootProperties;
     private final List<SwaggerOperationService> swaggerOperationServices;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Value("${kcautoconf.export-path:/mac/configuration/export}")
     private String exportPath;
@@ -34,16 +37,15 @@ public class AutoconfigurationService {
     @Value("${kcautoconf.override:NO_OVERRIDE}")
     private String override;
 
-    @Autowired
-    public AutoconfigurationService(ApplicationContext context, KeycloakSpringBootProperties keycloakSpringBootProperties, List<SwaggerOperationService> swaggerOperationServices) {
-        this.context = context;
-        this.keycloakSpringBootProperties = keycloakSpringBootProperties;
-        this.swaggerOperationServices = swaggerOperationServices;
-    }
-
     public void updateKeycloakConfiguration() {
+
         log.info("Automatic resources and scopes configuration process started.");
-        keycloakSpringBootProperties.getPolicyEnforcerConfig().getPaths().addAll(getPathConfigurations());
+
+        List<PolicyEnforcerConfig.PathConfig> autoConfigPaths = getPathConfigurations();
+
+        keycloakSpringBootProperties.getPolicyEnforcerConfig().getPaths().addAll(autoConfigPaths);
+
+        notifyAutoconfigFinishedEvent(autoConfigPaths.size());
     }
 
     public ApplicationContext getContext() {
@@ -177,5 +179,14 @@ public class AutoconfigurationService {
         configurationPath.setEnforcementMode(PolicyEnforcerConfig.EnforcementMode.DISABLED);
         getKeycloakSpringBootProperties().getPolicyEnforcerConfig().getPaths().add(configurationPath);
 
+    }
+
+    public void notifyAutoconfigFinishedEvent(Integer endpoints) {
+
+        if (applicationEventPublisher == null)
+            return;
+
+        AutoConfigurationFinishedEvent customSpringEvent = new AutoConfigurationFinishedEvent(this, "Config finished! Added" + endpoints + " endpoints.");
+        applicationEventPublisher.publishEvent(customSpringEvent);
     }
 }
