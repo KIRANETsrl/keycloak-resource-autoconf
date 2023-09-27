@@ -34,9 +34,6 @@ public class AutoconfigurationService {
     @Value("${kcautoconf.export-path:/mac/configuration/export}")
     private String exportPath;
 
-    @Value("${kcautoconf.override:NO_OVERRIDE}")
-    private String override;
-
     public void updateKeycloakConfiguration() {
 
         log.info("Automatic resources and scopes configuration process started.");
@@ -114,9 +111,6 @@ public class AutoconfigurationService {
                                     }
 
                                     PolicyEnforcerConfig.PathConfig existingPath = pathConfigMap.get(pathConfig.getPath());
-
-                                    if (resourceName.equals(override))
-                                        pathConfig.setEnforcementMode(PolicyEnforcerConfig.EnforcementMode.DISABLED);
 
                                     if (existingPath != null && !pathConfig.getMethods().isEmpty()) {
 
