@@ -72,7 +72,7 @@ public class AutoconfigurationService {
                 throw new RuntimeException("Missing resource/endpoint name in @RequestMapping annotation on controller: " + name);
             }
 
-            String resourceName = requestMappingAnnotation.value()[0];
+            String resourceName = requestMappingAnnotation.value()[0].replace("/", "");
 
 
 
