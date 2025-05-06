@@ -66,7 +66,7 @@ class KeycloakResourceAutoConfigurationTest {
         PolicyEnforcerConfig policyEnforcerConfig = new PolicyEnforcerConfig();
         keycloakSpringBootProperties.setPolicyEnforcerConfig(policyEnforcerConfig);
 
-        autoconfigurationService = new AutoconfigurationService(context, keycloakSpringBootProperties, swaggerOperationServices, null);
+        autoconfigurationService = new AutoconfigurationService(true, context, keycloakSpringBootProperties, swaggerOperationServices, null, null);
         sut = new KeycloakResourceAutoConfiguration(autoconfigurationService);
     }
 

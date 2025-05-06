@@ -1,14 +1,18 @@
 package it.maconsulting.kcautoconf.services;
 
 import it.maconsulting.kcautoconf.events.AutoConfigurationFinishedEvent;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.adapters.springboot.KeycloakSpringBootProperties;
 import org.keycloak.representations.adapters.config.PolicyEnforcerConfig;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
@@ -23,18 +27,37 @@ import java.util.function.Predicate;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class AutoconfigurationService {
 
-    private final ApplicationContext context;
-    private final KeycloakSpringBootProperties keycloakSpringBootProperties;
-    private final List<SwaggerOperationService> swaggerOperationServices;
-    private final ApplicationEventPublisher applicationEventPublisher;
+    @Value("${keycloak.enabled}")
+    Boolean keycloakEnabled;
+
+    @Lazy
+    @Autowired
+    private ApplicationContext context;
+
+    @Lazy
+    @Autowired
+    private KeycloakSpringBootProperties keycloakSpringBootProperties;
+    @Lazy
+    @Autowired
+    private List<SwaggerOperationService> swaggerOperationServices;
+    @Lazy
+    @Autowired
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @Value("${kcautoconf.export-path:/mac/configuration/export}")
     private String exportPath;
 
     public void updateKeycloakConfiguration() {
+
+        if (!keycloakEnabled) {
+
+            log.warn("Keycloak is disabled, skipping automatic configuration.");
+            return;
+        }
 
         log.info("Automatic resources and scopes configuration process started.");
 
